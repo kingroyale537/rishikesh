@@ -2,11 +2,11 @@
   "name": "vscode-rishikesh",
   "displayName": "Rishikesh Language Support",
   "description": "Zero-config language support, 1-click execution, syntax highlighting, and formatter for Rishikesh (.rk, .rishi).",
-  "version": "0.1.0",
-  "publisher": "rishikesh",
+  "version": "0.1.1",
+  "publisher": "kingroyale537",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rishikeshrai/rishikesh.git"
+    "url": "https://github.com/kingroyale537/rishikesh.git"
   },
   "main": "./extension.js",
   "engines": {

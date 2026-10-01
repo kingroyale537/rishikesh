@@ -12,7 +12,7 @@
 
 [![CI](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/kingroyale537/rishikesh/actions)
 [![Version](https://img.shields.io/badge/version-0.1.0-38bdf8?style=for-the-badge)](https://github.com/kingroyale537/rishikesh/releases)
-[![Open VSX](https://img.shields.io/badge/Open%20VSX-Published-818cf8?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://open-vsx.org/extension/rishikesh/vscode-rishikesh)
+[![Open VSX](https://img.shields.io/badge/Open%20VSX-Verified%20Publisher-10b981?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://open-vsx.org/extension/kingroyale537/vscode-rishikesh)
 [![Platforms](https://img.shields.io/badge/Platforms-macOS%20|%20Linux%20|%20Windows-f59e0b?style=for-the-badge)](https://github.com/kingroyale537/rishikesh)
 [![License](https://img.shields.io/badge/license-MIT%20/%20Apache--2.0-ec4899?style=for-the-badge)](LICENSE)
 
