@@ -1,0 +1,120 @@
+# ==============================================================================
+# FEATURE 6: Reverse-Mode Automatic Differentiation (Autograd Engine)
+# Breakthrough: First-class native AI gradient computation without PyTorch/C++
+# ==============================================================================
+
+struct ValueNode:
+    id: Int
+    data: Float
+    grad: Float
+    op: String
+    prev: List[ValueNode]
+
+fn create_node(id: Int, data: Float, op: String = "", prev: List[ValueNode] = []) -> ValueNode:
+    return ValueNode(id, data, 0.0, op, prev)
+
+fn node_add(next_id: Int, a: ValueNode, b: ValueNode) -> ValueNode:
+    return create_node(next_id, a.data + b.data, "+", [a, b])
+
+fn node_mul(next_id: Int, a: ValueNode, b: ValueNode) -> ValueNode:
+    return create_node(next_id, a.data * b.data, "*", [a, b])
+
+fn node_pow2(next_id: Int, a: ValueNode) -> ValueNode:
+    return create_node(next_id, a.data ** 2, "^2", [a])
+
+fn node_backward(root: ValueNode):
+    # Set gradient of loss to 1.0 (dL/dL = 1.0)
+    root.grad = 1.0
+
+    # Build topological order
+    mut topo = []
+    mut visited = []
+
+    # Simple reverse traversal
+    mut queue = [root]
+    while len(queue) > 0:
+        let curr: ValueNode = pop(queue)
+        push(topo, curr)
+        for p in curr.prev:
+            push(queue, p)
+
+    # Accumulate gradients via Chain Rule
+    for node in topo:
+        if node.op == "+":
+            node.prev[0].grad += node.grad * 1.0
+            node.prev[1].grad += node.grad * 1.0
+        elif node.op == "*":
+            node.prev[0].grad += node.grad * node.prev[1].data
+            node.prev[1].grad += node.grad * node.prev[0].data
+        elif node.op == "^2":
+            node.prev[0].grad += node.grad * (2.0 * node.prev[0].data)
+
+fn main():
+    println("⚡ Initializing Rishikesh Native Reverse-Mode Autograd Engine...")
+
+    # Problem: Fit target line y = 3.0 * x + 2.0
+    # Training Data: x = 2.0, target_y = 8.0
+    let target_x = 2.0
+    let target_y = 8.0
+
+    # Model Parameters: Weight w (initial 0.5), Bias b (initial 0.0)
+    mut w_val = 0.5
+    mut b_val = 0.0
+    let learning_rate = 0.05
+
+    println("\nTarget Function : y = 3.0 * x + 2.0 (For x=2.0, Target Y=8.0)")
+    println("Initial Weights : w={w_val}, b={b_val}")
+    println("------------------------------------------------------------------")
+    println("EPOCH | PREDICTION | LOSS (MSE) | GRAD(w)    | GRAD(b)    | WEIGHT(w)")
+    println("------+------------+------------+------------+------------+-----------")
+
+    mut node_id = 1
+    for epoch in range(1, 11):
+        # 1. Forward Pass (Construct Computation Graph)
+        let x_node = create_node(node_id, target_x)
+        node_id += 1
+        let y_true_node = create_node(node_id, target_y)
+        node_id += 1
+
+        let w_node = create_node(node_id, w_val)
+        node_id += 1
+        let b_node = create_node(node_id, b_val)
+        node_id += 1
+
+        # Prediction y_pred = w * x + b
+        let wx_node = node_mul(node_id, w_node, x_node)
+        node_id += 1
+        let pred_node = node_add(node_id, wx_node, b_node)
+        node_id += 1
+
+        # Loss = (pred - target_y)^2
+        let neg_one = create_node(node_id, -1.0)
+        node_id += 1
+        let neg_y = node_mul(node_id, y_true_node, neg_one)
+        node_id += 1
+        let diff_node = node_add(node_id, pred_node, neg_y)
+        node_id += 1
+        let loss_node = node_pow2(node_id, diff_node)
+        node_id += 1
+
+        # 2. Backward Pass (Backpropagation)
+        node_backward(loss_node)
+
+        let ep_str = pad_left(str(epoch), 5)
+        let pred_str = pad_left(str(pred_node.data), 10)
+        let loss_str = pad_left(str(loss_node.data), 10)
+        let gw_str = pad_left(str(w_node.grad), 10)
+        let gb_str = pad_left(str(b_node.grad), 10)
+        let nw_str = pad_left(str(w_val), 9)
+
+        println("{ep_str} | {pred_str} | {loss_str} | {gw_str} | {gb_str} | {nw_str}")
+
+        # 3. Parameter Update via Gradient Descent (SGD)
+        w_val -= learning_rate * w_node.grad
+        b_val -= learning_rate * b_node.grad
+
+    println("------------------------------------------------------------------")
+    println("✓ Training Converged! Final Parameters: w={w_val}, b={b_val}")
+    println("Final Predicted output for x=2.0 -> {(w_val * target_x) + b_val} (Target: 8.0)")
+
+main()

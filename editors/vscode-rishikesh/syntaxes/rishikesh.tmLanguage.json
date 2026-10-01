@@ -1,0 +1,176 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Rishikesh",
+  "scopeName": "source.rishikesh",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#constants" },
+    { "include": "#builtins" },
+    { "include": "#functions" },
+    { "include": "#numbers" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.rishikesh",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.rishikesh",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.rishikesh",
+              "match": "\\\\."
+            },
+            {
+              "name": "meta.embedded.expression.rishikesh",
+              "begin": "\\{",
+              "end": "\\}",
+              "beginCaptures": {
+                "0": { "name": "punctuation.section.embedded.begin.rishikesh" }
+              },
+              "endCaptures": {
+                "0": { "name": "punctuation.section.embedded.end.rishikesh" }
+              },
+              "patterns": [
+                { "include": "$self" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.rishikesh",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.rishikesh",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.rishikesh",
+          "match": "\\b(if|elif|else|while|for|in|break|continue|return|match|spawn)\\b"
+        },
+        {
+          "name": "keyword.declaration.rishikesh",
+          "match": "\\b(let|mut|fn|struct|trait|impl|enum|component|const|import|from|as|module)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "entity.name.type.rishikesh",
+          "match": "\\b(Int|Int32|Int64|UInt8|UInt16|UInt32|UInt64|Float|Float32|Float64|Bool|String|List|Map|Set|Option|Result|Any)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.rishikesh",
+          "match": "\\b(True|False|None|true|false|nil|null)\\b"
+        },
+        {
+          "name": "variable.language.self.rishikesh",
+          "match": "\\bself\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.rishikesh",
+          "match": "\\b(print|println|len|type|range|str|int|float|bool|push|pop|assert|assert_eq|map|filter|sum)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "\\bfn\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "entity.name.function.rishikesh" }
+          }
+        },
+        {
+          "match": "\\bstruct\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "entity.name.type.class.rishikesh" }
+          }
+        },
+        {
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "entity.name.function.call.rishikesh" }
+          }
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.rishikesh",
+          "match": "\\b0[xX][0-9a-fA-F_]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.rishikesh",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9_]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.rishikesh",
+          "match": "\\b[0-9][0-9_]*\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.pipeline.rishikesh",
+          "match": "\\|>"
+        },
+        {
+          "name": "keyword.operator.null-coalesce.rishikesh",
+          "match": "\\?\\?"
+        },
+        {
+          "name": "keyword.operator.arrow.rishikesh",
+          "match": "->|=>"
+        },
+        {
+          "name": "keyword.operator.comparison.rishikesh",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.logical.rishikesh",
+          "match": "\\b(and|or|not)\\b|&&|\\|\\||!"
+        },
+        {
+          "name": "keyword.operator.assignment.rishikesh",
+          "match": "\\+=|-=|\\*=|/=|="
+        },
+        {
+          "name": "keyword.operator.arithmetic.rishikesh",
+          "match": "\\*\\*|\\+|-|\\*|/|%"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,147 @@
+# ==============================================================================
+# PROJECT 5: High-Performance In-Memory Key-Value Store (Redis Subset)
+# Tier 2: Cloud, Concurrency & Data (@server)
+# ==============================================================================
+
+struct KVEntry:
+    value: Value
+    expires_at_ms: Int # 0 means no expiration
+
+struct RedisStore:
+    db: Map
+    stats_ops: Int
+
+    fn set(self, key: String, val: Value, ttl_ms: Int = 0):
+        self.stats_ops += 1
+        let exp = if ttl_ms > 0: time_ms() + ttl_ms else: 0
+        self.db[key] = KVEntry(val, exp)
+        return "OK"
+
+    fn get(self, key: String):
+        self.stats_ops += 1
+        if not has_key(self.db, key):
+            return None
+
+        let entry: KVEntry = self.db[key]
+        if entry.expires_at_ms > 0 and time_ms() > entry.expires_at_ms:
+            # Active Expiration on read
+            delete(self.db, key)
+            return None
+
+        return entry.value
+
+    fn del(self, key: String) -> Bool:
+        self.stats_ops += 1
+        if has_key(self.db, key):
+            delete(self.db, key)
+            return True
+        return False
+
+    fn incr(self, key: String, delta: Int = 1) -> Int:
+        self.stats_ops += 1
+        let curr = self.get(key)
+        let new_val = if curr == None: delta else: int(curr) + delta
+        self.set(key, new_val)
+        return new_val
+
+    fn lpush(self, key: String, item: Value):
+        self.stats_ops += 1
+        let curr = self.get(key)
+        if curr == None:
+            self.set(key, [item])
+        else:
+            let list_val = curr
+            # Prepend
+            mut new_list = [item]
+            for elem in list_val:
+                push(new_list, elem)
+            self.set(key, new_list)
+        return len(self.get(key))
+
+    fn rpush(self, key: String, item: Value):
+        self.stats_ops += 1
+        let curr = self.get(key)
+        if curr == None:
+            self.set(key, [item])
+        else:
+            let list_val = curr
+            push(list_val, item)
+            self.set(key, list_val)
+        return len(self.get(key))
+
+    fn lrange(self, key: String, start: Int, end: Int):
+        let curr = self.get(key)
+        if curr == None:
+            return []
+        return slice(curr, start, end)
+
+    fn ttl(self, key: String) -> Int:
+        if not has_key(self.db, key):
+            return -2 # Key does not exist
+        let entry: KVEntry = self.db[key]
+        if entry.expires_at_ms == 0:
+            return -1 # Key exists with no expiration
+        let remaining = entry.expires_at_ms - time_ms()
+        if remaining <= 0:
+            delete(self.db, key)
+            return -2
+        return remaining
+
+    fn snapshot(self, file_path: String):
+        mut serializable = {}
+        for k in keys(self.db):
+            let v = self.get(k)
+            if v != None:
+                serializable[k] = v
+        write_file(file_path, json_stringify(serializable, True))
+        return "Snapshot saved ({len(keys(serializable))} keys)"
+
+fn main():
+    println("⚡ Initializing Rishikesh In-Memory Key-Value Store (RishiRedis)...")
+    let store = RedisStore({}, 0)
+
+    # 1. Basic SET and GET
+    println("\n--- [1] String & Counter Operations ---")
+    store.set("cluster:name", "Production-Rishikesh-Cluster")
+    store.set("cluster:nodes", 64)
+    println("GET cluster:name  -> {store.get(\"cluster:name\")}")
+    println("GET cluster:nodes -> {store.get(\"cluster:nodes\")}")
+
+    # 2. Atomic INCR
+    store.set("page:views", 1000)
+    store.incr("page:views", 5)
+    store.incr("page:views", 1)
+    println("INCR page:views   -> {store.get(\"page:views\")}")
+
+    # 3. List Operations (LPUSH, RPUSH, LRANGE)
+    println("\n--- [2] List & Queue Primitives ---")
+    store.rpush("task_queue", "job_init_auth")
+    store.rpush("task_queue", "job_process_payment")
+    store.rpush("task_queue", "job_send_receipt")
+    store.lpush("task_queue", "URGENT_health_ping")
+
+    let jobs = store.lrange("task_queue", 0, 4)
+    println("LRANGE task_queue 0 4 -> {jobs}")
+
+    # 4. TTL & Key Expiration
+    println("\n--- [3] TTL Expiration Engine ---")
+    store.set("auth_token:temp_99", "secret_session_token", 50) # 50ms TTL
+    println("GET auth_token (immediate) -> {store.get(\"auth_token:temp_99\")}")
+    println("TTL remaining (ms)          -> {store.ttl(\"auth_token:temp_99\")}")
+
+    println("⏳ Waiting 60ms for key expiration...")
+    sleep_ms(60)
+
+    println("GET auth_token (post-TTL)  -> {store.get(\"auth_token:temp_99\")}")
+    println("TTL post-expiration        -> {store.ttl(\"auth_token:temp_99\")}")
+
+    # 5. Snapshot Persistence
+    println("\n--- [4] Database Persistence & Snapshotting ---")
+    let snap_res = store.snapshot("/tmp/rishiredis_dump.json")
+    println("Snapshot status: {snap_res}")
+
+    let dump_content = read_file("/tmp/rishiredis_dump.json")
+    println("Persisted JSON on disk:\n{dump_content}")
+    println("Total Operations Processed: {store.stats_ops} ops")
+
+main()

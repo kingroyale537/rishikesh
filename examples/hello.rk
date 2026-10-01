@@ -1,0 +1,15 @@
+# Welcome to the Rishikesh Programming Language!
+# A modern, ultra-fast language designed to unify systems, cloud, and app development.
+
+let creator = "Rishikesh"
+let mission = "Build a billion-dollar, error-free universal language"
+let year = 2026
+
+println("==================================================")
+println("🚀 Welcome to {creator} Language v0.1.0!")
+println("🎯 Mission: {mission}")
+println("📅 Year: {year}")
+println("==================================================")
+
+let languages_replaced = ["Python", "JavaScript", "C++"]
+println("Designed to unify the best of: {languages_replaced}")

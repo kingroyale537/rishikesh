@@ -1,0 +1,21 @@
+[package]
+name = "rishi_cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "rishi"
+path = "src/main.rs"
+
+[dependencies]
+rishi_span = { workspace = true }
+rishi_lexer = { workspace = true }
+rishi_ast = { workspace = true }
+rishi_parser = { workspace = true }
+rishi_eval = { workspace = true }
+clap = { workspace = true }
+rustyline = { workspace = true }
+colored = { workspace = true }
+serde_json = { workspace = true }

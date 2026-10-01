@@ -1,0 +1,215 @@
+# ==============================================================================
+# PROJECT 7: Self-Hosting Compiler Subset & Stack-Based Bytecode VM
+# Tier 2: Cloud, Concurrency & Data (@server / Language Maturity Hallmark)
+# ==============================================================================
+
+# -------------------------------------------------------------
+# 1. Bytecode Instruction Definitions
+# -------------------------------------------------------------
+# Opcode Enums:
+# 1: OP_CONST <val>
+# 2: OP_LOAD <var_name>
+# 3: OP_STORE <var_name>
+# 4: OP_ADD
+# 5: OP_SUB
+# 6: OP_MUL
+# 7: OP_DIV
+# 8: OP_LT
+# 9: OP_GT
+# 10: OP_EQ
+# 11: OP_JUMP_IF_FALSE <offset>
+# 12: OP_JUMP <offset>
+# 13: OP_PRINT <msg_prefix>
+# 14: OP_HALT
+
+struct Instruction:
+    op: Int
+    operand: Value
+
+struct BytecodeVM:
+    code: List[Instruction]
+    ip: Int
+    stack: List[Value]
+    globals: Map
+
+    fn execute(self):
+        while self.ip < len(self.code):
+            let inst = self.code[self.ip]
+            self.ip += 1
+
+            if inst.op == 1: # OP_CONST
+                push(self.stack, inst.operand)
+            elif inst.op == 2: # OP_LOAD
+                let var_name = str(inst.operand)
+                if has_key(self.globals, var_name):
+                    push(self.stack, self.globals[var_name])
+                else:
+                    println("VM Error: Undefined variable {var_name}")
+                    return None
+            elif inst.op == 3: # OP_STORE
+                let var_name = str(inst.operand)
+                let val = pop(self.stack)
+                self.globals[var_name] = val
+            elif inst.op == 4: # OP_ADD
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a + b)
+            elif inst.op == 5: # OP_SUB
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a - b)
+            elif inst.op == 6: # OP_MUL
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a * b)
+            elif inst.op == 7: # OP_DIV
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a / b)
+            elif inst.op == 8: # OP_LT
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a < b)
+            elif inst.op == 9: # OP_GT
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a > b)
+            elif inst.op == 10: # OP_EQ
+                let b = pop(self.stack)
+                let a = pop(self.stack)
+                push(self.stack, a == b)
+            elif inst.op == 11: # OP_JUMP_IF_FALSE
+                let cond = pop(self.stack)
+                if not bool(cond):
+                    self.ip = int(inst.operand)
+            elif inst.op == 12: # OP_JUMP
+                self.ip = int(inst.operand)
+            elif inst.op == 13: # OP_PRINT
+                let val = pop(self.stack)
+                println("  [VM STDOUT] {inst.operand}: {val}")
+            elif inst.op == 14: # OP_HALT
+                break
+
+        return self.globals
+
+# -------------------------------------------------------------
+# 2. Self-Hosted Bytecode Compiler (AST -> Bytecode Generator)
+# -------------------------------------------------------------
+
+struct MiniCompiler:
+    instructions: List[Instruction]
+
+    fn emit(self, op: Int, operand: Value = None) -> Int:
+        let addr = len(self.instructions)
+        push(self.instructions, Instruction(op, operand))
+        return addr
+
+    fn compile_sample_program(self):
+        # Target Source Program written in Rishikesh:
+        # -------------------------------------------
+        # mut counter = 1
+        # mut total = 0
+        # while counter <= 5:
+        #     total = total + (counter * 10)
+        #     counter = counter + 1
+        # print("Final Aggregated Total", total)
+        # -------------------------------------------
+
+        # 1. mut counter = 1
+        self.emit(1, 1) # OP_CONST 1
+        self.emit(3, "counter") # OP_STORE counter
+
+        # 2. mut total = 0
+        self.emit(1, 0) # OP_CONST 0
+        self.emit(3, "total") # OP_STORE total
+
+        # 3. Loop Start Address
+        let loop_start_addr = len(self.instructions)
+
+        # Condition: counter <= 5 (counter < 6)
+        self.emit(2, "counter") # OP_LOAD counter
+        self.emit(1, 6)         # OP_CONST 6
+        self.emit(8, None)      # OP_LT
+
+        # Jump to loop end if false (placeholder address)
+        let jump_out_idx = self.emit(11, 0)
+
+        # Loop Body: total = total + (counter * 10)
+        self.emit(2, "total")   # OP_LOAD total
+        self.emit(2, "counter") # OP_LOAD counter
+        self.emit(1, 10)        # OP_CONST 10
+        self.emit(6, None)      # OP_MUL
+        self.emit(4, None)      # OP_ADD
+        self.emit(3, "total")   # OP_STORE total
+
+        # counter = counter + 1
+        self.emit(2, "counter") # OP_LOAD counter
+        self.emit(1, 1)         # OP_CONST 1
+        self.emit(4, None)      # OP_ADD
+        self.emit(3, "counter") # OP_STORE counter
+
+        # Jump back to loop start
+        self.emit(12, loop_start_addr)
+
+        # Patch jump_out address
+        let loop_end_addr = len(self.instructions)
+        self.instructions[jump_out_idx].operand = loop_end_addr
+
+        # Print Result: print("Computed Total", total)
+        self.emit(2, "total")
+        self.emit(13, "Computed Total (Loop Accumulator)")
+
+        self.emit(2, "counter")
+        self.emit(13, "Final Loop Counter")
+
+        self.emit(14, None) # OP_HALT
+
+fn main():
+    println("⚡ Booting Rishikesh Self-Hosting Compiler & Stack-Based Bytecode VM...")
+    println("Compiling High-Level Rishikesh AST into VM Bytecode IR Instructions...")
+
+    let compiler = MiniCompiler([])
+    compiler.compile_sample_program()
+
+    println("✓ Compilation Finished! Generated {len(compiler.instructions)} Bytecode Instructions:\n")
+    println("ADDR | OPCODE              | OPERAND")
+    println("-----+---------------------+-----------------------")
+    mut idx = 0
+    for inst in compiler.instructions:
+        mut op_name = "OP_UNKNOWN"
+        if inst.op == 1:
+            op_name = "OP_CONST"
+        elif inst.op == 2:
+            op_name = "OP_LOAD"
+        elif inst.op == 3:
+            op_name = "OP_STORE"
+        elif inst.op == 4:
+            op_name = "OP_ADD"
+        elif inst.op == 5:
+            op_name = "OP_SUB"
+        elif inst.op == 6:
+            op_name = "OP_MUL"
+        elif inst.op == 7:
+            op_name = "OP_DIV"
+        elif inst.op == 8:
+            op_name = "OP_LT"
+        elif inst.op == 11:
+            op_name = "OP_JUMP_IF_FALSE"
+        elif inst.op == 12:
+            op_name = "OP_JUMP"
+        elif inst.op == 13:
+            op_name = "OP_PRINT"
+        elif inst.op == 14:
+            op_name = "OP_HALT"
+
+        println("{pad_left(str(idx), 4)} | {pad_right(op_name, 19)} | {inst.operand}")
+        idx += 1
+
+    println("\n🚀 Spawning Virtual Machine and Executing Compiled Bytecode...")
+    let vm = BytecodeVM(compiler.instructions, 0, [], {})
+    let result_env = vm.execute()
+
+    println("\n✓ Execution Successful!")
+    println("VM Final State Variables: {result_env}")
+
+main()

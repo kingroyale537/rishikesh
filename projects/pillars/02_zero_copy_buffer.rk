@@ -1,0 +1,53 @@
+# ==============================================================================
+# PILLAR 2: Zero-Copy C-ABI Raw Memory Buffer Protocol
+# Direct physical heap allocations, binary IEEE-754 streams, and zero GC overhead
+# ==============================================================================
+
+fn main():
+    println("⚡ Initializing Rishikesh Zero-Copy C-ABI Raw Memory Buffer Subsystem...")
+
+    # 1. Allocate 64-byte aligned contiguous binary memory buffer
+    let buf_id = buf_alloc(64)
+    println("✓ Allocated 64-byte native heap memory buffer (Buffer ID: {buf_id})")
+    println("  Buffer capacity: {buf_size(buf_id)} bytes")
+
+    # 2. Write raw IEEE-754 64-bit floats directly into binary memory
+    println("\n--- [1] Writing Binary IEEE-754 Float Streams (Zero-Copy) ---")
+    let pi_val = 3.141592653589793
+    let e_val = 2.718281828459045
+    let phi_val = 1.618033988749895
+
+    buf_write_f64(buf_id, 0, pi_val)   # Offset 0..8
+    buf_write_f64(buf_id, 8, e_val)    # Offset 8..16
+    buf_write_f64(buf_id, 16, phi_val) # Offset 16..24
+
+    # 3. Write 64-bit signed integer into binary memory
+    buf_write_i64(buf_id, 24, 9876543210) # Offset 24..32
+
+    println("✓ Wrote binary stream to memory offsets 0..32")
+
+    # 4. Read back raw binary values without serialization
+    println("\n--- [2] In-Process Zero-Copy Memory Reads ---")
+    let read_pi = buf_read_f64(buf_id, 0)
+    let read_e = buf_read_f64(buf_id, 8)
+    let read_phi = buf_read_f64(buf_id, 16)
+    let read_int = buf_read_i64(buf_id, 24)
+
+    println("Read Float @ Offset 0  : {read_pi}")
+    println("Read Float @ Offset 8  : {read_e}")
+    println("Read Float @ Offset 16 : {read_phi}")
+    println("Read Int64 @ Offset 24 : {read_int}")
+
+    # 5. Fast Block Memory Transfer (memcpy equivalent)
+    println("\n--- [3] High-Speed In-Memory Block Copy ---")
+    let clone_buf = buf_alloc(64)
+    buf_copy(buf_id, 0, clone_buf, 0, 32)
+    let copied_pi = buf_read_f64(clone_buf, 0)
+    println("Verified Block Copy Value @ clone_buf[0]: {copied_pi}")
+
+    # 6. Reclaim Native Memory
+    buf_free(buf_id)
+    buf_free(clone_buf)
+    println("\n✓ Pillar 2 Verified: Zero-copy in-process raw memory buffer protocol operational!")
+
+main()

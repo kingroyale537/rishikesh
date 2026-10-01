@@ -1,0 +1,123 @@
+# ==============================================================================
+# PROJECT 9: Reactive 2D Game Engine & Framebuffer Canvas
+# Tier 3: Reactive & Interactive Apps (@ui / Reactive State & Graphics)
+# ==============================================================================
+
+struct Point:
+    x: Int
+    y: Int
+
+struct GameState:
+    player_pos: Point
+    player_score: Int
+    coins: List[Point]
+    obstacles: List[Point]
+    grid_width: Int
+    grid_height: Int
+    is_game_over: Bool
+
+fn create_initial_state() -> GameState:
+    return GameState(
+        Point(2, 2),
+        0,
+        [Point(6, 2), Point(12, 5), Point(18, 2), Point(20, 7)],
+        [Point(8, 2), Point(15, 4), Point(10, 6)],
+        26,
+        10,
+        False
+    )
+
+fn reducer_tick(state: GameState, move_dx: Int, move_dy: Int) -> GameState:
+    if state.is_game_over:
+        return state
+
+    let new_x = max(1, min(state.grid_width - 2, state.player_pos.x + move_dx))
+    let new_y = max(1, min(state.grid_height - 2, state.player_pos.y + move_dy))
+    let new_player_pos = Point(new_x, new_y)
+
+    # 1. Collision check with obstacles
+    mut collided = False
+    for obs in state.obstacles:
+        if obs.x == new_x and obs.y == new_y:
+            collided = True
+
+    if collided:
+        state.is_game_over = True
+        return state
+
+    # 2. Collect Coin items
+    mut remaining_coins = []
+    mut gained_score = 0
+    for coin in state.coins:
+        if coin.x == new_x and coin.y == new_y:
+            gained_score += 100
+        else:
+            push(remaining_coins, coin)
+
+    state.player_pos = new_player_pos
+    state.player_score += gained_score
+    state.coins = remaining_coins
+
+    return state
+
+fn render_canvas(state: GameState, frame_num: Int):
+    println("\n=======================================================")
+    println("  🎮 RISHIKESH REACTIVE CANVAS ENGINE (Frame #{frame_num})")
+    println("=======================================================")
+    println("  SCORE: {state.player_score} PTS | REMAINING COINS: {len(state.coins)} | STATUS: {if state.is_game_over: \"GAME OVER\" else: \"ALIVE\"}")
+    println("-------------------------------------------------------")
+
+    # Render 2D Frame Grid
+    for row in range(0, state.grid_height):
+        mut line = ""
+        for col in range(0, state.grid_width):
+            if row == 0 or row == state.grid_height - 1 or col == 0 or col == state.grid_width - 1:
+                line += "#" # Border wall
+            elif row == state.player_pos.y and col == state.player_pos.x:
+                line += "@" # Player avatar
+            else:
+                mut has_coin = False
+                for c in state.coins:
+                    if c.x == col and c.y == row:
+                        has_coin = True
+
+                mut has_obs = False
+                for o in state.obstacles:
+                    if o.x == col and o.y == row:
+                        has_obs = True
+
+                if has_coin:
+                    line += "$" # Collectible coin
+                elif has_obs:
+                    line += "X" # Hazard obstacle
+                else:
+                    line += " "
+
+        println(line)
+    println("-------------------------------------------------------")
+
+fn main():
+    println("⚡ Booting Reactive 2D Game Loop & Canvas Subsystem...")
+    mut game = create_initial_state()
+
+    # Sequence of User Inputs (DX, DY movements)
+    let input_actions = [
+        {"dx": 2, "dy": 0, "action": "MOVE_RIGHT"},
+        {"dx": 2, "dy": 0, "action": "COLLECT_COIN_1"},
+        {"dx": 0, "dy": 2, "action": "MOVE_DOWN"},
+        {"dx": 3, "dy": 1, "action": "MOVE_DIAGONAL"},
+        {"dx": 3, "dy": 0, "action": "COLLECT_COIN_2"}
+    ]
+
+    render_canvas(game, 0)
+
+    mut frame = 1
+    for act in input_actions:
+        println(">> Action [{frame}]: {act[\"action\"]} (dx={act[\"dx\"]}, dy={act[\"dy\"]})")
+        game = reducer_tick(game, act["dx"], act["dy"])
+        render_canvas(game, frame)
+        frame += 1
+
+    println("✓ Game Simulation Complete! Final Player Score: {game.player_score} Points")
+
+main()

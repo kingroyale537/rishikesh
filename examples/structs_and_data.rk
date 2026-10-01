@@ -1,0 +1,17 @@
+# Structs and Object Oriented Programming in Rishikesh
+
+struct User:
+    id: Int
+    name: String
+    role: String
+    is_active: Bool
+
+    fn describe(self):
+        let status = if self.is_active: "Active" else: "Inactive"
+        return "User #{self.id}: {self.name} [{self.role}] - {status}"
+
+let admin = User(1, "Rishikesh Rai", "Architect & Founder", True)
+let dev = User(2, "Alex Mercer", "Core Engine Developer", False)
+
+println(admin.describe())
+println(dev.describe())

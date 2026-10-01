@@ -1,0 +1,21 @@
+# Math, Variables and Immutability in Rishikesh
+
+# Immutable by default
+let base_price = 100
+let tax_rate = 0.18
+let discount = 15
+
+let final_price = (base_price - discount) * (1.0 + tax_rate)
+println("Final Price: ${final_price}")
+
+# Mutable variables
+mut counter = 1
+while counter <= 5:
+    println("Counter value: {counter}, squared: {counter ** 2}")
+    counter += 1
+
+# Safe division and types
+let a = 50
+let b = 8
+println("{a} / {b} = {a / b} (Type: {type(a / b)})")
+println("{a} % {b} = {a % b}")

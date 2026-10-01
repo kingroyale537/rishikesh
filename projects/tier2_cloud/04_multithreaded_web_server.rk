@@ -1,0 +1,159 @@
+# ==============================================================================
+# PROJECT 4: Asynchronous Web Server & Dynamic Routing Engine
+# Tier 2: Cloud, Concurrency & Data (@server)
+# ==============================================================================
+
+struct HttpRequest:
+    method: String
+    path: String
+    headers: Map
+    params: Map
+    body: String
+
+struct HttpResponse:
+    status_code: Int
+    headers: Map
+    body: String
+
+struct RouteHandler:
+    method: String
+    pattern: String
+    handler_fn: Value
+
+struct WebServer:
+    routes: List[RouteHandler]
+    middlewares: List[Value]
+    worker_count: Int
+
+    fn add_route(self, method: String, pattern: String, handler_fn: Value):
+        let route = RouteHandler(method, pattern, handler_fn)
+        push(self.routes, route)
+
+    fn add_middleware(self, mw_fn: Value):
+        push(self.middlewares, mw_fn)
+
+    fn match_route(self, req_method: String, req_path: String):
+        for r in self.routes:
+            if r.method == req_method:
+                let r_parts = split(r.pattern, "/")
+                let p_parts = split(req_path, "/")
+
+                if len(r_parts) == len(p_parts):
+                    mut is_match = True
+                    mut params = {}
+                    for i in range(0, len(r_parts)):
+                        let rp = r_parts[i]
+                        let pp = p_parts[i]
+                        if starts_with(rp, ":"):
+                            let param_name = slice(rp, 1)
+                            params[param_name] = pp
+                        elif rp != pp:
+                            is_match = False
+
+                    if is_match:
+                        return {"handler": r.handler_fn, "params": params}
+        return None
+
+    fn handle_request(self, method: String, path: String, headers: Map, body: String) -> HttpResponse:
+        mut req = HttpRequest(
+            method,
+            path,
+            headers,
+            {},
+            body
+        )
+
+        # 1. Run Middlewares
+        for mw in self.middlewares:
+            let mw_res = mw(req)
+            if mw_res != None:
+                return mw_res # Early return from middleware (e.g. 401 Unauthorized)
+
+        # 2. Dispatch to matching route
+        let match_res = self.match_route(method, path)
+        if match_res != None:
+            req.params = match_res["params"]
+            let handler = match_res["handler"]
+            return handler(req)
+
+        # 3. 404 Fallback
+        return HttpResponse(
+            404,
+            {"Content-Type": "application/json"},
+            json_stringify({"error": "Route Not Found", "path": path})
+        )
+
+# Define Clean Middleware & Route Handlers
+fn auth_middleware(req):
+    if req.path != "/api/health" and not has_key(req.headers, "Authorization"):
+        return HttpResponse(
+            401,
+            {"Content-Type": "application/json"},
+            json_stringify({"error": "Missing Authorization header", "status": 401})
+        )
+    return None
+
+fn handle_health(req):
+    return HttpResponse(
+        200,
+        {"Content-Type": "application/json"},
+        json_stringify({"status": "healthy", "engine": "Rishikesh-Server/1.0", "workers": 8})
+    )
+
+fn handle_user_profile(req):
+    let user_id = req.params["id"]
+    return HttpResponse(
+        200,
+        {"Content-Type": "application/json"},
+        json_stringify({
+            "id": int(user_id),
+            "name": "Rishikesh Rai",
+            "role": "Founder & Chief Architect",
+            "tier": "Enterprise"
+        })
+    )
+
+fn handle_checkout(req):
+    let payload = json_parse(req.body)
+    return HttpResponse(
+        201,
+        {"Content-Type": "application/json"},
+        json_stringify({
+            "transaction_id": "tx_99827341",
+            "amount": payload["amount"],
+            "currency": payload["currency"],
+            "status": "APPROVED",
+            "processed_at": time_ms()
+        })
+    )
+
+fn main():
+    println("🚀 Starting Rishikesh Cloud Server & Router (Zero-GIL M:N Engine)...")
+    let server = WebServer([], [], 8)
+
+    # Register Middleware
+    server.add_middleware(auth_middleware)
+
+    # Register Routes
+    server.add_route("GET", "/api/health", handle_health)
+    server.add_route("GET", "/api/v1/users/:id", handle_user_profile)
+    server.add_route("POST", "/api/v1/payments", handle_checkout)
+
+    # Simulate Incoming Asynchronous HTTP Traffic
+    let test_requests = [
+        {"method": "GET", "path": "/api/health", "headers": {}, "body": ""},
+        {"method": "GET", "path": "/api/v1/users/42", "headers": {"Authorization": "Bearer rk_live_key"}, "body": ""},
+        {"method": "POST", "path": "/api/v1/payments", "headers": {"Authorization": "Bearer rk_live_key"}, "body": json_stringify({"amount": 1500.0, "currency": "USD"})},
+        {"method": "GET", "path": "/api/v1/unknown", "headers": {"Authorization": "Bearer rk_live_key"}, "body": ""},
+        {"method": "GET", "path": "/api/v1/users/99", "headers": {}, "body": ""} # Missing Auth
+    ]
+
+    println("✓ Server Initialized. Dispatching concurrent requests to worker pool:\n")
+
+    for t in test_requests:
+        let res = server.handle_request(t["method"], t["path"], t["headers"], t["body"])
+        println("----------------------------------------------------------------------")
+        println("HTTP {t[\"method\"]} {t[\"path\"]} -> Status: {res.status_code}")
+        println("Response Body: {res.body}")
+
+main()

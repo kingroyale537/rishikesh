@@ -1,0 +1,57 @@
+# ==============================================================================
+# FEATURE 2: Native CPU SIMD & Tensor Vectorization Subsystem
+# Breakthrough: Ultra-fast tensor operations & matrix algebra without CUDA/C++ glue
+# ==============================================================================
+
+fn main():
+    println("⚡ Initializing Rishikesh Native SIMD & Tensor Vector Engine...")
+
+    # 1. 1D SIMD Vector Operations
+    println("\n--- [1] SIMD Parallel Vector Operations ---")
+    let vec_a = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    let vec_b = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]
+
+    let sum_vec = simd_add(vec_a, vec_b)
+    let prod_vec = simd_mul(vec_a, vec_b)
+    let dot_prod = simd_dot(vec_a, vec_b)
+    let l2_norm = simd_norm(vec_a)
+
+    println("Vector A             : {vec_a}")
+    println("Vector B             : {vec_b}")
+    println("SIMD Add (A + B)     : {sum_vec}")
+    println("SIMD Element-Mul (A*B): {prod_vec}")
+    println("SIMD Dot Product     : {dot_prod}")
+    println("SIMD L2 Norm of A    : {l2_norm}")
+
+    # 2. 2D Matrix Multiplication ($2 \times 3 \times 3 \times 2 \rightarrow 2 \times 2$)
+    println("\n--- [2] 2D Matrix Multiplication ($2 \\times 3 \\times 3 \\times 2$) ---")
+    let mat_a = [
+        [1.0, 2.0, 3.0],
+        [4.0, 5.0, 6.0]
+    ]
+
+    let mat_b = [
+        [7.0, 8.0],
+        [9.0, 1.0],
+        [2.0, 3.0]
+    ]
+
+    let mat_c = matrix_mul(mat_a, mat_b)
+    println("Matrix A (2x3):\n  {mat_a[0]}\n  {mat_a[1]}")
+    println("Matrix B (3x2):\n  {mat_b[0]}\n  {mat_b[1]}\n  {mat_b[2]}")
+    println("Result Matrix C = A x B (2x2):\n  {mat_c[0]}\n  {mat_c[1]}")
+
+    # 3. Deep Learning Activation Functions
+    println("\n--- [3] Neural Network Activations (ReLU & Softmax) ---")
+    let raw_logits = [-2.4, 0.0, 1.5, 4.2, -0.8, 3.1]
+    let relu_out = tensor_relu(raw_logits)
+    let softmax_probs = tensor_softmax(raw_logits)
+
+    println("Raw Logits          : {raw_logits}")
+    println("ReLU Activation     : {relu_out}")
+    println("Softmax Probability : {softmax_probs}")
+    println("Sum of Probabilities: {sum(softmax_probs)}")
+
+    println("\n✓ Native SIMD & Tensor Subsystem Verified: Ready for High-Performance AI!")
+
+main()

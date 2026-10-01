@@ -1,0 +1,129 @@
+# ==============================================================================
+# PROJECT 1: Custom Memory Allocator & Mark-and-Sweep GC Visualizer
+# Tier 1: Systems & Low-Level Architecture (@kernel simulation)
+# ==============================================================================
+
+struct MemoryBlock:
+    id: Int
+    size: Int
+    is_allocated: Bool
+    is_marked: Bool
+    tag: String
+    refs: List[Int]
+
+struct MemoryHeap:
+    capacity: Int
+    blocks: List[MemoryBlock]
+    roots: List[Int]
+    next_id: Int
+
+    fn allocate(self, size: Int, tag: String):
+        let block_id = self.next_id
+        self.next_id += 1
+
+        let block = MemoryBlock(
+            id=block_id,
+            size=size,
+            is_allocated=True,
+            is_marked=False,
+            tag=tag,
+            refs=[]
+        )
+        push(self.blocks, block)
+        return block_id
+
+    fn add_reference(self, from_id: Int, to_id: Int):
+        for b in self.blocks:
+            if b.id == from_id:
+                push(b.refs, to_id)
+
+    fn add_root(self, id: Int):
+        push(self.roots, id)
+
+    fn mark_reachable(self, id: Int):
+        for b in self.blocks:
+            if b.id == id:
+                if not b.is_marked:
+                    b.is_marked = True
+                    for child_id in b.refs:
+                        self.mark_reachable(child_id)
+
+    fn run_gc(self):
+        # 1. Reset mark phase
+        for b in self.blocks:
+            b.is_marked = False
+
+        # 2. Mark from root pointers
+        for root_id in self.roots:
+            self.mark_reachable(root_id)
+
+        # 3. Sweep phase: count and reclaim unmarked blocks
+        mut reclaimed_bytes = 0
+        mut reclaimed_count = 0
+        mut surviving_blocks = []
+
+        for b in self.blocks:
+            if b.is_marked:
+                push(surviving_blocks, b)
+            else:
+                reclaimed_bytes += b.size
+                reclaimed_count += 1
+
+        self.blocks = surviving_blocks
+        return {"reclaimed_bytes": reclaimed_bytes, "reclaimed_count": reclaimed_count}
+
+    fn render_memory_grid(self, title: String):
+        println("\n=======================================================")
+        println("  {title}")
+        println("=======================================================")
+        println("Total Live Blocks: {len(self.blocks)} | Active Roots: {self.roots}")
+        println("-------------------------------------------------------")
+
+        mut grid = ""
+        for b in self.blocks:
+            let status = if b.is_marked: "[LIVE]" else: "[ALLOC]"
+            grid += " [{b.id}:{b.tag}:{b.size}B]"
+
+        println("Heap Memory Map: {grid}")
+        println("-------------------------------------------------------")
+        for b in self.blocks:
+            println("  Block #{b.id} ({b.tag}, {b.size} bytes) -> References: {b.refs}")
+
+fn main():
+    println("⚡ Initializing Rishikesh System Memory Manager & GC Engine...")
+    let heap = MemoryHeap(capacity=1024, blocks=[], roots=[], next_id=1)
+
+    # 1. Allocate objects on Heap
+    let root_node = heap.allocate(64, "RootObject")
+    let child_node = heap.allocate(128, "ActiveWorker")
+    let shared_buffer = heap.allocate(256, "SharedCache")
+    
+    # 2. Dead / Leaked objects (unreachable from roots)
+    let orphan1 = heap.allocate(64, "DeadSocket")
+    let orphan2 = heap.allocate(512, "OrphanBuffer")
+    let orphan3 = heap.allocate(128, "ZombieTask")
+
+    # Connect references
+    heap.add_reference(root_node, child_node)
+    heap.add_reference(child_node, shared_buffer)
+    heap.add_reference(orphan1, orphan2) # Cyclic/isolated group
+    heap.add_reference(orphan2, orphan1)
+
+    # Register GC roots (Stack registers)
+    heap.add_root(root_node)
+
+    # Render initial heap state
+    heap.render_memory_grid("HEAP STATE BEFORE GARBAGE COLLECTION")
+
+    # 3. Execute Mark-and-Sweep GC
+    println("\n🧹 Triggering Mark-and-Sweep GC Cycle across memory arenas...")
+    let stats = heap.run_gc()
+
+    println("✓ GC Sweep Complete!")
+    println("  Reclaimed Blocks : {stats[\"reclaimed_count\"]}")
+    println("  Reclaimed Memory : {stats[\"reclaimed_bytes\"]} Bytes")
+
+    # Render post-GC heap state
+    heap.render_memory_grid("HEAP STATE AFTER SWEEP & COMPACTION")
+
+main()

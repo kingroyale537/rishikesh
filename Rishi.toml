@@ -1,0 +1,15 @@
+[package]
+name = "my_rishikesh_app"
+version = "0.1.0"
+
+[dependencies]
+std/math@2.0 = "latest"
+
+[dependencies.python]
+torch = "^2.1.0"
+
+[dependencies.npm]
+three = "^0.160.0"
+
+[dependencies.cargo]
+tokio = "^1.35.0"

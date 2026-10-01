@@ -1,0 +1,5 @@
+# hello_world.rk
+let target = "World"
+let language = "Rishikesh"
+
+println("Hello, {target}! Welcome to {language} 🚀")

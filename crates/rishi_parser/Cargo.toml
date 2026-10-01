@@ -1,0 +1,12 @@
+[package]
+name = "rishi_parser"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+rishi_span = { workspace = true }
+rishi_lexer = { workspace = true }
+rishi_ast = { workspace = true }
+thiserror = { workspace = true }

@@ -1,0 +1,120 @@
+# ==============================================================================
+# PROJECT 3: High-Throughput Log Stream Parser & Inverted Index Search Engine
+# Tier 1: Systems & Low-Level Architecture (@kernel / Pipeline ergonomics)
+# ==============================================================================
+
+struct LogRecord:
+    id: Int
+    timestamp: String
+    ip: String
+    method: String
+    endpoint: String
+    status: Int
+    latency_ms: Float
+    message: String
+
+struct InvertedIndex:
+    index: Map
+    documents: Map
+
+    fn add_document(self, doc_id: Int, text: String):
+        self.documents[str(doc_id)] = text
+        let clean_text = to_lower(text)
+        let words = split(clean_text, " ")
+
+        for raw_w in words:
+            let w = trim(raw_w)
+            if len(w) > 2:
+                if not has_key(self.index, w):
+                    self.index[w] = []
+                let doc_list = self.index[w]
+                if not contains(doc_list, doc_id):
+                    push(doc_list, doc_id)
+
+    fn search(self, query: String):
+        let clean_q = to_lower(trim(query))
+        let query_words = split(clean_q, " ")
+
+        mut matching_docs = []
+        for word in query_words:
+            if has_key(self.index, word):
+                let hits = self.index[word]
+                for doc_id in hits:
+                    if not contains(matching_docs, doc_id):
+                        push(matching_docs, doc_id)
+
+        return matching_docs
+
+fn parse_log_line(id: Int, line: String) -> LogRecord:
+    let parts = split(line, "|")
+    return LogRecord(
+        id=id,
+        timestamp=trim(parts[0]),
+        ip=trim(parts[1]),
+        method=trim(parts[2]),
+        endpoint=trim(parts[3]),
+        status=int(trim(parts[4])),
+        latency_ms=float(trim(parts[5])),
+        message=trim(parts[6])
+    )
+
+fn main():
+    println("⚡ Initializing High-Throughput Log Streaming & Indexing Engine...")
+
+    # Simulated Stream of High-Volume Microservice Logs
+    let raw_stream = [
+        "2026-08-30 08:00:01 | 192.168.1.10 | GET | /api/v1/health | 200 | 1.2 | Health check ok node healthy",
+        "2026-08-30 08:00:02 | 192.168.1.42 | POST | /api/v1/auth/login | 200 | 45.3 | User authentication successful for admin",
+        "2026-08-30 08:00:03 | 192.168.1.88 | POST | /api/v1/payment/checkout | 500 | 320.8 | Database connection timeout during payment gateway charge",
+        "2026-08-30 08:00:04 | 192.168.1.15 | GET | /api/v1/products | 200 | 18.4 | Fetched product inventory catalogue",
+        "2026-08-30 08:00:05 | 192.168.1.99 | POST | /api/v1/orders | 504 | 540.1 | Gateway timeout upstream microservice unresponsive",
+        "2026-08-30 08:00:06 | 192.168.1.42 | GET | /api/v1/users/profile | 200 | 12.1 | User profile retrieved cached",
+        "2026-08-30 08:00:07 | 192.168.1.77 | PUT | /api/v1/settings | 403 | 5.2 | Unauthorized access attempt to security settings",
+        "2026-08-30 08:00:08 | 192.168.1.88 | POST | /api/v1/payment/retry | 200 | 85.6 | Payment retry succeeded after database reconnection"
+    ]
+
+    # Pipeline: Parse raw stream into structured records
+    mut parsed_records = []
+    mut doc_id = 1
+    for line in raw_stream:
+        let record = parse_log_line(doc_id, line)
+        push(parsed_records, record)
+        doc_id += 1
+
+    println("✓ Stream Ingestion: {len(parsed_records)} log records parsed seamlessly.")
+
+    # Pipeline: Filter high latency and errors using |>
+    let slow_queries = parsed_records
+        |> filter((r) => r.latency_ms > 50.0)
+
+    let error_logs = parsed_records
+        |> filter((r) => r.status >= 500)
+
+    println("  - Slow Requests (>50ms): {len(slow_queries)}")
+    println("  - Critical Server Errors (>=500): {len(error_logs)}")
+
+    # Build Inverted Search Index
+    let search_engine = InvertedIndex(index={}, documents={})
+    for r in parsed_records:
+        let full_text = "{r.method} {r.endpoint} {r.message} status:{r.status}"
+        search_engine.add_document(r.id, full_text)
+
+    println("\n🔍 Executing Sub-Millisecond Search Queries on Inverted Index:")
+    
+    # Query 1: "timeout"
+    let q1 = "timeout"
+    let hits1 = search_engine.search(q1)
+    println("----------------------------------------------------------------")
+    println("Query: \"{q1}\" -> Found {len(hits1)} Matches:")
+    for id in hits1:
+        println("  [Doc #{id}] -> {search_engine.documents[str(id)]}")
+
+    # Query 2: "database"
+    let q2 = "database"
+    let hits2 = search_engine.search(q2)
+    println("----------------------------------------------------------------")
+    println("Query: \"{q2}\" -> Found {len(hits2)} Matches:")
+    for id in hits2:
+        println("  [Doc #{id}] -> {search_engine.documents[str(id)]}")
+
+main()

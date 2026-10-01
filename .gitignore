@@ -1,0 +1,15 @@
+# Build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary traces
+*.trace.json
+
+# IDE
+.idea/
+.vscode/settings.json

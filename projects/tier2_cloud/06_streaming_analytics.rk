@@ -1,0 +1,116 @@
+# ==============================================================================
+# PROJECT 6: Real-Time Streaming Analytics & Map-Reduce Pipeline
+# Tier 2: Cloud, Concurrency & Data (@server / Functional Streaming)
+# ==============================================================================
+
+struct TelemetryEvent:
+    id: Int
+    timestamp: Int
+    service: String
+    latency_ms: Float
+    status: Int
+    cpu_percent: Float
+
+struct StreamSummary:
+    total_events: Int
+    avg_latency_ms: Float
+    max_latency_ms: Float
+    error_count: Int
+    error_rate_pct: Float
+    avg_cpu: Float
+
+fn compute_window_stats(events: List[TelemetryEvent]) -> StreamSummary:
+    let count = len(events)
+    if count == 0:
+        return StreamSummary(0, 0.0, 0.0, 0, 0.0, 0.0)
+
+    # 1. Total & Max Latency via Pipelines
+    let latencies = events |> map((e) => e.latency_ms)
+    let total_latency = latencies |> sum()
+    let avg_latency = total_latency / count
+
+    mut max_lat = 0.0
+    for lat in latencies:
+        if lat > max_lat:
+            max_lat = lat
+
+    # 2. Error Rate Pipeline
+    let error_events = events |> filter((e) => e.status >= 500)
+    let error_count = len(error_events)
+    let error_rate = (error_count * 100.0) / count
+
+    # 3. CPU Load
+    let cpu_load = (events |> map((e) => e.cpu_percent) |> sum()) / count
+
+    return StreamSummary(
+        count,
+        avg_latency,
+        max_lat,
+        error_count,
+        error_rate,
+        cpu_load
+    )
+
+fn detect_anomalies(events: List[TelemetryEvent], baseline_avg: Float):
+    println("\n🚨 Running Real-Time Anomaly & Spike Detection Algorithm...")
+    mut anomalies = []
+
+    for e in events:
+        mut reasons = []
+        if e.latency_ms > baseline_avg * 3.0:
+            push(reasons, "Latency Spike ({e.latency_ms}ms > {baseline_avg * 3.0}ms threshold)")
+        if e.status >= 500:
+            push(reasons, "HTTP 5xx Server Outage (Status: {e.status})")
+        if e.cpu_percent > 85.0:
+            push(reasons, "CPU Critical Load ({e.cpu_percent}%)")
+
+        if len(reasons) > 0:
+            push(anomalies, {
+                "event_id": e.id,
+                "service": e.service,
+                "reasons": join(reasons, " | ")
+            })
+
+    return anomalies
+
+fn main():
+    println("⚡ Starting Rishikesh Real-Time Map-Reduce Streaming Pipeline...")
+
+    # Simulated Event Telemetry Stream across Microservices
+    let event_stream = [
+        TelemetryEvent(1, 1000, "auth-service", 22.4, 200, 34.2),
+        TelemetryEvent(2, 1005, "order-service", 45.1, 200, 48.0),
+        TelemetryEvent(3, 1010, "payment-gateway", 380.5, 500, 89.2), # Spike + Error + High CPU
+        TelemetryEvent(4, 1015, "auth-service", 19.8, 200, 31.0),
+        TelemetryEvent(5, 1020, "search-api", 84.3, 200, 52.1),
+        TelemetryEvent(6, 1025, "payment-gateway", 412.0, 503, 94.5), # Spike + Error + High CPU
+        TelemetryEvent(7, 1030, "user-profile", 15.6, 200, 28.3),
+        TelemetryEvent(8, 1035, "order-service", 52.0, 200, 44.0),
+        TelemetryEvent(9, 1040, "search-api", 310.2, 200, 78.4),      # Latency Spike
+        TelemetryEvent(10, 1045, "notification-svc", 8.4, 200, 14.1)
+    ]
+
+    println("✓ Ingested {len(event_stream)} Telemetry Events across Cluster.")
+
+    # Compute Window Metrics
+    let summary = compute_window_stats(event_stream)
+
+    println("\n=======================================================")
+    println("  STREAMING ANALYTICS WINDOW REPORT (Last 10 Events)")
+    println("=======================================================")
+    println("  Total Processed Events  : {summary.total_events}")
+    println("  Average Service Latency : {summary.avg_latency_ms} ms")
+    println("  Peak Window Latency     : {summary.max_latency_ms} ms")
+    println("  Server Error Count      : {summary.error_count}")
+    println("  Cluster Error Rate      : {summary.error_rate_pct}%")
+    println("  Mean Node CPU Load      : {summary.avg_cpu}%")
+    println("=======================================================")
+
+    # Run Anomaly Detection
+    let anomalies = detect_anomalies(event_stream, summary.avg_latency_ms)
+    println("Anomalous Event Incidents Detected: {len(anomalies)}")
+    for a in anomalies:
+        println("  [ALERT Incident on {a[\"service\"]} (Event #{a[\"event_id\"]})]")
+        println("    ↳ {a[\"reasons\"]}")
+
+main()

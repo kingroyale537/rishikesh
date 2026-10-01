@@ -1,0 +1,191 @@
+# ==============================================================================
+# PROJECT 10: Language Server Protocol (LSP) Engine & IDE Diagnostics
+# Tier 3: Reactive & Interactive Apps (@ui / Developer Tooling & IDEs)
+# ==============================================================================
+
+struct LspRequest:
+    jsonrpc: String
+    id: Int
+    method: String
+    params: Map
+
+struct LspServer:
+    documents: Map
+    server_capabilities: Map
+
+    fn handle_message(self, raw_json: String) -> String:
+        let req = json_parse(raw_json)
+        let method = req["method"]
+        let req_id = if has_key(req, "id"): req["id"] else: None
+
+        if method == "initialize":
+            return self.handle_initialize(req_id)
+        elif method == "textDocument/didOpen":
+            return self.handle_did_open(req["params"])
+        elif method == "textDocument/hover":
+            return self.handle_hover(req_id, req["params"])
+        elif method == "textDocument/completion":
+            return self.handle_completion(req_id, req["params"])
+        else:
+            return json_stringify({
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32601, "message": "Method not found"}
+            })
+
+    fn handle_initialize(self, req_id: Int) -> String:
+        return json_stringify({
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "capabilities": {
+                    "hoverProvider": True,
+                    "completionProvider": {
+                        "resolveProvider": False,
+                        "triggerCharacters": [".", "|>", ":"]
+                    },
+                    "textDocumentSync": 1
+                },
+                "serverInfo": {
+                    "name": "Rishikesh-Language-Server",
+                    "version": "0.1.0"
+                }
+            }
+        }, True)
+
+    fn handle_did_open(self, params: Map) -> String:
+        let doc = params["textDocument"]
+        let uri = doc["uri"]
+        let text = doc["text"]
+        self.documents[uri] = text
+
+        # Analyze Document and Generate Diagnostics
+        let diagnostics = self.analyze_diagnostics(text)
+        return json_stringify({
+            "jsonrpc": "2.0",
+            "method": "textDocument/publishDiagnostics",
+            "params": {
+                "uri": uri,
+                "diagnostics": diagnostics
+            }
+        }, True)
+
+    fn analyze_diagnostics(self, text: String):
+        mut diags = []
+        let lines = split(text, "\n")
+        mut line_num = 0
+
+        for line in lines:
+            # Diagnostic Rule 1: Check for old Python def/lambda
+            if starts_with(trim(line), "def "):
+                push(diags, {
+                    "range": {
+                        "start": {"line": line_num, "character": 0},
+                        "end": {"line": line_num, "character": 3}
+                    },
+                    "severity": 1, # Error
+                    "message": "Use `fn` instead of `def` in Rishikesh",
+                    "source": "rishi_linter"
+                })
+
+            # Diagnostic Rule 2: Check for unassigned let mutation
+            if starts_with(trim(line), "let ") and contains(line, "+="):
+                push(diags, {
+                    "range": {
+                        "start": {"line": line_num, "character": 0},
+                        "end": {"line": line_num, "character": 3}
+                    },
+                    "severity": 1,
+                    "message": "Cannot mutate `let` binding. Use `mut` for mutable variables.",
+                    "source": "rishi_typechecker"
+                })
+
+            line_num += 1
+
+        return diags
+
+    fn handle_hover(self, req_id: Int, params: Map) -> String:
+        let pos = params["position"]
+        let line_num = pos["line"]
+        let col = pos["character"]
+
+        # Symbol documentation lookup
+        return json_stringify({
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "contents": {
+                    "kind": "markdown",
+                    "value": "### Rishikesh Pipeline Operator `|>`\n\nTransforms `x |> f(y)` into `f(x, y)`.\nZero-cost abstraction for readable, left-to-right data transformations."
+                }
+            }
+        }, True)
+
+    fn handle_completion(self, req_id: Int, params: Map) -> String:
+        return json_stringify({
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": [
+                {"label": "let", "kind": 14, "detail": "Immutable variable binding"},
+                {"label": "mut", "kind": 14, "detail": "Mutable variable binding"},
+                {"label": "fn", "kind": 3, "detail": "Function declaration keyword"},
+                {"label": "struct", "kind": 7, "detail": "Struct definition"},
+                {"label": "filter", "kind": 3, "detail": "Standard functional filter"},
+                {"label": "map", "kind": 3, "detail": "Standard functional map"},
+                {"label": "sum", "kind": 3, "detail": "Sum aggregator"}
+            ]
+        }, True)
+
+fn main():
+    println("⚡ Booting Rishikesh Language Server Protocol (LSP) Engine...")
+    let lsp = LspServer({}, {})
+
+    # 1. Simulate LSP Initialize Request from VS Code / Cursor
+    let init_req = json_stringify({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {"processId": 1234, "rootUri": "file:///workspace"}
+    })
+
+    println("\n[IDE -> LSP] Initializing Client Handshake...")
+    let init_resp = lsp.handle_message(init_req)
+    println("[LSP -> IDE] Server Capabilities Response:\n{init_resp}")
+
+    # 2. Simulate textDocument/didOpen with Code Sample
+    let sample_source = "let score = 95\ndef calculate_grade():\n    return score\n"
+    let open_req = json_stringify({
+        "jsonrpc": "2.0",
+        "method": "textDocument/didOpen",
+        "params": {
+            "textDocument": {
+                "uri": "file:///workspace/main.rk",
+                "languageId": "rishikesh",
+                "version": 1,
+                "text": sample_source
+            }
+        }
+    })
+
+    println("\n[IDE -> LSP] Opening Document & Triggering Diagnostics Engine...")
+    let diag_resp = lsp.handle_message(open_req)
+    println("[LSP -> IDE] Published Diagnostics (Real-Time IDE Lints):\n{diag_resp}")
+
+    # 3. Simulate textDocument/completion
+    let comp_req = json_stringify({
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "textDocument/completion",
+        "params": {
+            "textDocument": {"uri": "file:///workspace/main.rk"},
+            "position": {"line": 1, "character": 4}
+        }
+    })
+
+    println("\n[IDE -> LSP] Requesting Autocompletion Candidates at Cursor...")
+    let comp_resp = lsp.handle_message(comp_req)
+    println("[LSP -> IDE] Autocomplete Suggestions:\n{comp_resp}")
+
+    println("\n✓ LSP Server Ready: Providing real-time intelligence to IDE editors.")
+
+main()

@@ -1,0 +1,110 @@
+{
+  "name": "vscode-rishikesh",
+  "displayName": "Rishikesh Language Support",
+  "description": "Zero-config language support, 1-click execution, syntax highlighting, and formatter for Rishikesh (.rk, .rishi).",
+  "version": "0.1.0",
+  "publisher": "rishikesh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rishikeshrai/rishikesh.git"
+  },
+  "main": "./extension.js",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "rishikesh",
+    "rishi",
+    "rk",
+    "universal language",
+    "ai language",
+    "compiler"
+  ],
+  "activationEvents": [
+    "onLanguage:rishikesh"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "rishikesh",
+        "aliases": [
+          "Rishikesh",
+          "rishikesh",
+          "rishi",
+          "rk"
+        ],
+        "extensions": [
+          ".rk",
+          ".rishi"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rishikesh",
+        "scopeName": "source.rishikesh",
+        "path": "./syntaxes/rishikesh.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "rishikesh.run",
+        "title": "Rishikesh: Run Active File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "rishikesh.format",
+        "title": "Rishikesh: Format Active File",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "rishikesh.lint",
+        "title": "Rishikesh: Lint Active File",
+        "icon": "$(check)"
+      },
+      {
+        "command": "rishikesh.repl",
+        "title": "Rishikesh: Open Interactive REPL",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "rishikesh.profile",
+        "title": "Rishikesh: Profile Execution (Flamegraph)",
+        "icon": "$(flame)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "rishikesh.run",
+          "group": "navigation",
+          "when": "resourceExtname == .rk || resourceExtname == .rishi"
+        },
+        {
+          "command": "rishikesh.format",
+          "group": "1_modification",
+          "when": "resourceExtname == .rk || resourceExtname == .rishi"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "rishikesh.run",
+          "group": "0_run",
+          "when": "resourceExtname == .rk || resourceExtname == .rishi"
+        },
+        {
+          "command": "rishikesh.profile",
+          "group": "0_run",
+          "when": "resourceExtname == .rk || resourceExtname == .rishi"
+        }
+      ]
+    }
+  }
+}

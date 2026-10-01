@@ -1,0 +1,25 @@
+# Functions, Recursion, and Higher-Order Closures in Rishikesh
+
+# Recursive Fibonacci
+fn fibonacci(n):
+    if n <= 0:
+        return 0
+    elif n == 1:
+        return 1
+    else:
+        return fibonacci(n - 1) + fibonacci(n - 2)
+
+println("--- Fibonacci Sequence ---")
+for i in range(0, 10):
+    println("Fib({i}) = {fibonacci(i)}")
+
+# Higher-order function & Closure
+fn make_multiplier(factor):
+    return (x) => x * factor
+
+let triple = make_multiplier(3)
+let tenfold = make_multiplier(10)
+
+println("\n--- Closures ---")
+println("3 * 7 = {triple(7)}")
+println("10 * 7 = {tenfold(7)}")

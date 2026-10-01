@@ -1,0 +1,73 @@
+# ==============================================================================
+# PROJECT 8: Terminal UI (TUI) Dashboard & System Process Monitor
+# Tier 3: Reactive & Interactive Apps (@ui / Terminal Visuals)
+# ==============================================================================
+
+struct ProcessInfo:
+    pid: Int
+    name: String
+    cpu_percent: Float
+    mem_mb: Float
+    threads: Int
+    status: String
+
+fn render_gauge(label: String, percent: Float, width: Int = 25) -> String:
+    let filled_len = int((percent * width) / 100.0)
+    let empty_len = max(0, width - filled_len)
+    let filled_bar = "█" * filled_len
+    let empty_bar = "░" * empty_len
+    return "{pad_right(label, 10)} [{filled_bar}{empty_bar}] {pad_left(str(percent), 5)}%"
+
+fn render_tui_frame(tick: Int, processes: List[ProcessInfo], total_mem_mb: Float, used_mem_mb: Float):
+    let cpu_load_core1 = 42.5 + (tick * 4.2) % 35.0
+    let cpu_load_core2 = 68.0 - (tick * 3.1) % 25.0
+    let cpu_load_core3 = 88.4 - (tick * 5.5) % 40.0
+    let cpu_load_core4 = 29.1 + (tick * 6.0) % 50.0
+
+    let mem_percent = (used_mem_mb * 100.0) / total_mem_mb
+
+    println("\n+=============================================================================+")
+    println("|  ⚡ RISHIKESH SYSTEM MONITOR & PROCESS DASHBOARD (TUI v1.0)                 |")
+    println("+=============================================================================+")
+    println("| HOST: rishikesh-macbook-pro | ARCH: aarch64 | UPTIME: 48d 14h | TICK: #{tick}")
+    println("+-----------------------------------------------------------------------------+")
+    println("| CPU CORES:                                                                  |")
+    println("|   {render_gauge(\"Core 1:\", cpu_load_core1)}    {render_gauge(\"Core 2:\", cpu_load_core2)} |")
+    println("|   {render_gauge(\"Core 3:\", cpu_load_core3)}    {render_gauge(\"Core 4:\", cpu_load_core4)} |")
+    println("+-----------------------------------------------------------------------------+")
+    println("| MEMORY:                                                                     |")
+    println("|   {render_gauge(\"RAM Usage:\", mem_percent, 50)} |")
+    println("|   Used: {used_mem_mb} MB / Total: {total_mem_mb} MB ({int(total_mem_mb - used_mem_mb)} MB Free)                     |")
+    println("+=============================================================================+")
+    println("| PID   | PROCESS NAME            | CPU %  | MEM (MB) | THREADS | STATUS      |")
+    println("+-------+-------------------------+--------+----------+---------+-------------+")
+
+    for p in processes:
+        let pid_str = pad_left(str(p.pid), 5)
+        let name_str = pad_right(p.name, 23)
+        let cpu_str = pad_left(str(p.cpu_percent), 6)
+        let mem_str = pad_left(str(p.mem_mb), 8)
+        let th_str = pad_left(str(p.threads), 7)
+        let st_str = pad_right(p.status, 11)
+        println("| {pid_str} | {name_str} | {cpu_str} | {mem_str} | {th_str} | {st_str} |")
+
+    println("+=============================================================================+")
+
+fn main():
+    println("⚡ Initializing Terminal UI (TUI) Dashboard Engine...")
+
+    let processes = [
+        ProcessInfo(101, "rishi_compiler_daemon", 18.5, 142.4, 16, "RUNNING"),
+        ProcessInfo(240, "postgres_cluster", 14.2, 512.0, 32, "SLEEPING"),
+        ProcessInfo(312, "redis_cache_node", 8.4, 256.0, 8, "RUNNING"),
+        ProcessInfo(450, "web_api_worker_01", 24.1, 188.5, 24, "RUNNING"),
+        ProcessInfo(520, "web_api_worker_02", 22.8, 185.0, 24, "RUNNING"),
+        ProcessInfo(688, "stream_analytics_sink", 12.0, 340.2, 12, "IO_WAIT"),
+        ProcessInfo(790, "tui_system_monitor", 1.2, 45.0, 4, "RUNNING")
+    ]
+
+    # Render Multi-Tick Dashboard Progression
+    for tick in range(1, 4):
+        render_tui_frame(tick, processes, 16384.0, 6840.0 + (tick * 120.0))
+
+main()

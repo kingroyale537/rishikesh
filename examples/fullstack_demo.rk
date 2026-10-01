@@ -1,0 +1,29 @@
+# Full-Stack Service & Analytics in Rishikesh
+
+struct Metric:
+    endpoint: String
+    latency_ms: Float
+    status_code: Int
+
+    fn is_slow(self):
+        return self.latency_ms > 100.0
+
+fn analyze_metrics(metrics):
+    let slow_requests = metrics |> filter((m) => m.is_slow())
+    let total_latency = metrics |> map((m) => m.latency_ms) |> sum()
+    let avg_latency = total_latency / len(metrics)
+
+    println("=== Performance Report ===")
+    println("Total Requests : {len(metrics)}")
+    println("Average Latency: {avg_latency} ms")
+    println("Slow Requests (>100ms): {len(slow_requests)}")
+
+let logs = [
+    Metric("/api/v1/auth", 24.5, 200),
+    Metric("/api/v1/users", 142.8, 200),
+    Metric("/api/v1/checkout", 88.2, 200),
+    Metric("/api/v1/search", 215.1, 200),
+    Metric("/api/v1/health", 4.1, 200)
+]
+
+analyze_metrics(logs)

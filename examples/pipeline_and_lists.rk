@@ -1,0 +1,12 @@
+# Data Transformation Pipelines in Rishikesh
+
+let dataset = [10, 15, 20, 25, 30, 35, 40, 45, 50]
+
+# Clean, readable data pipelines using |>
+let processed = dataset
+    |> filter((x) => x > 20)
+    |> map((x) => x * 2)
+
+println("Original dataset: {dataset}")
+println("Filtered (>20) and Doubled: {processed}")
+println("Total Sum: {processed |> sum()}")

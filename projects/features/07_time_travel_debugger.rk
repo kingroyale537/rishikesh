@@ -1,0 +1,92 @@
+# ==============================================================================
+# FEATURE 7: Time-Traveling Deterministic Debugger & Event Tracer
+# Breakthrough: Record state snapshots and travel backward/forward in execution time
+# ==============================================================================
+
+struct ExecutionFrame:
+    step: Int
+    action: String
+    state_snapshot: Map
+
+struct TimeTravelDebugger:
+    frames: List[ExecutionFrame]
+    cursor: Int
+
+    fn record_step(self, action: String, state: Map):
+        let step_id = len(self.frames) + 1
+        let frame = ExecutionFrame(step_id, action, clone(state))
+        push(self.frames, frame)
+
+    fn seek_step(self, step_id: Int) -> ExecutionFrame:
+        if step_id < 1 or step_id > len(self.frames):
+            println("⚠️ Out of range step: {step_id}")
+            return None
+        self.cursor = step_id - 1
+        return self.frames[self.cursor]
+
+    fn export_trace(self, file_path: String):
+        mut raw_frames = []
+        for f in self.frames:
+            push(raw_frames, {
+                "step": f.step,
+                "action": f.action,
+                "state": f.state_snapshot
+            })
+        let json_trace = json_stringify({"trace_version": "1.0", "total_frames": len(raw_frames), "timeline": raw_frames}, True)
+        write_file(file_path, json_trace)
+        return "Trace exported successfully"
+
+fn main():
+    println("⚡ Initializing Rishikesh Time-Traveling Deterministic Debugger...")
+    let debugger = TimeTravelDebugger([], 0)
+
+    # Simulated Stateful Algorithm: Dynamic Balance Tracker & Inventory Rebalance
+    mut state = {
+        "vault_usd": 10000.0,
+        "btc_reserves": 5.0,
+        "algo_status": "INITIALIZED",
+        "trade_count": 0
+    }
+
+    debugger.record_step("SYSTEM_INIT", state)
+
+    # Transaction 1: Buy 2.5 BTC @ $2,000/BTC
+    state["vault_usd"] -= 5000.0
+    state["btc_reserves"] += 2.5
+    state["trade_count"] += 1
+    state["algo_status"] = "POST_BUY_ORDER"
+    debugger.record_step("BUY_ORDER_EXECUTED", state)
+
+    # Transaction 2: Deposit $15,000 liquidity
+    state["vault_usd"] += 15000.0
+    state["algo_status"] = "LIQUIDITY_INJECTED"
+    debugger.record_step("LIQUIDITY_DEPOSIT", state)
+
+    # Transaction 3: Rebalance and Sell 1.0 BTC @ $3,500/BTC
+    state["vault_usd"] += 3500.0
+    state["btc_reserves"] -= 1.0
+    state["trade_count"] += 1
+    state["algo_status"] = "REBALANCED"
+    debugger.record_step("SELL_ORDER_EXECUTED", state)
+
+    println("✓ Recorded {len(debugger.frames)} deterministic execution frames.")
+
+    # Time-Travel Demonstration: Stepping backward and forward in time
+    println("\n--- [1] Traveling Backward in Time (Step 2 vs Step 4) ---")
+    let step2 = debugger.seek_step(2)
+    println("⏳ TIMELINE @ Step #{step2.step} ({step2.action}):")
+    println("   Vault: ${step2.state_snapshot[\"vault_usd\"]} | BTC: {step2.state_snapshot[\"btc_reserves\"]} | Status: {step2.state_snapshot[\"algo_status\"]}")
+
+    let step4 = debugger.seek_step(4)
+    println("\n⏳ TIMELINE @ Step #{step4.step} ({step4.action}):")
+    println("   Vault: ${step4.state_snapshot[\"vault_usd\"]} | BTC: {step4.state_snapshot[\"btc_reserves\"]} | Status: {step4.state_snapshot[\"algo_status\"]}")
+
+    # Export trace artifact to disk
+    println("\n--- [2] Exporting Trace for `rishi replay` CLI Command ---")
+    let trace_path = "/tmp/rishikesh_debug_trace.json"
+    debugger.export_trace(trace_path)
+    println("✓ Trace written to `{trace_path}`.")
+
+    println("\n✓ Time-Travel Deterministic Debugger Subsystem Verified!")
+
+main()

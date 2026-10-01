@@ -1,0 +1,182 @@
+# ==============================================================================
+# PROJECT 2: Embedded Virtual Machine & CHIP-8 Emulator
+# Tier 1: Systems & Low-Level Architecture (@kernel simulation)
+# ==============================================================================
+
+struct Chip8VM:
+    memory: List[Int]
+    registers: List[Int]
+    i_reg: Int
+    pc: Int
+    stack: List[Int]
+    sp: Int
+    display: List[Int]
+    width: Int
+    height: Int
+
+    fn initialize(self):
+        # 4096 Bytes of Memory
+        mut mem = []
+        for _ in range(0, 4096):
+            push(mem, 0)
+        self.memory = mem
+
+        # 16 General Purpose 8-bit Registers V0 - VF
+        mut regs = []
+        for _ in range(0, 16):
+            push(regs, 0)
+        self.registers = regs
+
+        self.i_reg = 0
+        self.pc = 512 # Standard CHIP-8 programs start at address 0x200 (512)
+        self.stack = []
+        self.sp = 0
+        self.width = 32
+        self.height = 12
+
+        # 32x12 Text-friendly Display Buffer
+        mut disp = []
+        for _ in range(0, self.width * self.height):
+            push(disp, 0)
+        self.display = disp
+
+    fn load_rom(self, instructions: List[Int]):
+        mut addr = 512
+        for opcode in instructions:
+            # High byte
+            self.memory[addr] = bshr(opcode, 8)
+            # Low byte
+            self.memory[addr + 1] = band(opcode, 255)
+            addr += 2
+
+    fn execute_cycle(self):
+        # Fetch 16-bit Opcode
+        let hi = self.memory[self.pc]
+        let lo = self.memory[self.pc + 1]
+        let opcode = bor(bshl(hi, 8), lo)
+        self.pc += 2
+
+        # Decode Opcode nibbles
+        let op_type = bshr(opcode, 12)
+        let x = band(bshr(opcode, 8), 15)
+        let y = band(bshr(opcode, 4), 15)
+        let n = band(opcode, 15)
+        let nn = band(opcode, 255)
+        let nnn = band(opcode, 4095)
+
+        # 0x00E0: Clear Screen
+        if opcode == 224:
+            for i in range(0, len(self.display)):
+                self.display[i] = 0
+        # 0x1nnn: Jump
+        elif op_type == 1:
+            self.pc = nnn
+        # 0x6xnn: Set Vx = nn
+        elif op_type == 6:
+            self.registers[x] = nn
+        # 0x7xnn: Add Vx += nn
+        elif op_type == 7:
+            self.registers[x] = band(self.registers[x] + nn, 255)
+        # 0x8xy0: Arithmetic / Bitwise
+        elif op_type == 8:
+            if n == 0:
+                self.registers[x] = self.registers[y]
+            elif n == 1:
+                self.registers[x] = bor(self.registers[x], self.registers[y])
+            elif n == 2:
+                self.registers[x] = band(self.registers[x], self.registers[y])
+            elif n == 3:
+                self.registers[x] = bxor(self.registers[x], self.registers[y])
+        # 0xAnnn: Set I = nnn
+        elif op_type == 10:
+            self.i_reg = nnn
+        # 0xDxyN: Draw Sprite at (Vx, Vy)
+        elif op_type == 13:
+            let vx = self.registers[x]
+            let vy = self.registers[y]
+            self.registers[15] = 0 # VF collision flag
+
+            for row in range(0, n):
+                let sprite_byte = self.memory[self.i_reg + row]
+                for col in range(0, 8):
+                    let pixel_bit = band(bshr(sprite_byte, 7 - col), 1)
+                    if pixel_bit != 0:
+                        let px = (vx + col) % self.width
+                        let py = (vy + row) % self.height
+                        let idx = py * self.width + px
+                        if self.display[idx] == 1:
+                            self.registers[15] = 1 # Collision
+                        self.display[idx] = bxor(self.display[idx], 1)
+
+    fn render_terminal(self):
+        println("+--------------------------------+")
+        for row in range(0, self.height):
+            mut line = "|"
+            for col in range(0, self.width):
+                let idx = row * self.width + col
+                if self.display[idx] == 1:
+                    line += "█"
+                else:
+                    line += " "
+            line += "|"
+            println(line)
+        println("+--------------------------------+")
+
+fn main():
+    println("⚡ Booting Rishikesh CHIP-8 CPU & Graphic Virtual Machine...")
+    let vm = Chip8VM(
+        memory=[],
+        registers=[],
+        i_reg=0,
+        pc=0,
+        stack=[],
+        sp=0,
+        display=[],
+        width=32,
+        height=12
+    )
+    vm.initialize()
+
+    # Load Sprite in memory at 0x300 (768)
+    # Sprite: R-emblem character pattern (5 bytes)
+    let sprite_addr = 768
+    vm.memory[sprite_addr + 0] = 240 # 11110000
+    vm.memory[sprite_addr + 1] = 144 # 10010000
+    vm.memory[sprite_addr + 2] = 240 # 11110000
+    vm.memory[sprite_addr + 3] = 160 # 10100000
+    vm.memory[sprite_addr + 4] = 144 # 10010000
+
+    # Binary ROM instructions:
+    # 1. 0x00E0: Clear screen
+    # 2. 0x6004: Set V0 = 4 (X position 1)
+    # 3. 0x6103: Set V1 = 3 (Y position 1)
+    # 4. 0xA300: Set I = 0x300 (sprite_addr)
+    # 5. 0xD015: Draw 5-byte sprite at (V0, V1)
+    # 6. 0x620E: Set V2 = 14 (X position 2)
+    # 7. 0xD215: Draw second sprite at (V2, V1)
+    # 8. 0x6318: Set V3 = 24 (X position 3)
+    # 9. 0xD315: Draw third sprite at (V3, V1)
+    let rom = [
+        224,   # CLS
+        24580, # 6004
+        24835, # 6103
+        41728, # A300 (I = 768)
+        53269, # D015 (Draw at V0, V1)
+        25102, # 620E (V2 = 14)
+        53781, # D215 (Draw at V2, V1)
+        25368, # 6318 (V3 = 24)
+        54037  # D315 (Draw at V3, V1)
+    ]
+
+    vm.load_rom(rom)
+    println("ROM Loaded into RAM (9 instructions, 18 bytes). Executing cycles...")
+
+    # Execute all 9 instructions
+    for _ in range(0, len(rom)):
+        vm.execute_cycle()
+
+    println("\n✓ Virtual Machine Framebuffer Render (Terminal Graphic Output):")
+    vm.render_terminal()
+    println("Registers: V0={vm.registers[0]}, V1={vm.registers[1]}, V2={vm.registers[2]}, PC=0x{to_hex(vm.pc)}")
+
+main()
