@@ -10,16 +10,16 @@
  |_| \_\_|___/_| |_|_|_|\_\___||___/|_| |_|
 ```
 
-[![CI](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/rishikeshrai/rishikesh/actions)
-[![Version](https://img.shields.io/badge/version-0.1.0-38bdf8?style=for-the-badge)](https://github.com/rishikeshrai/rishikesh/releases)
+[![CI](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/kingroyale537/rishikesh/actions)
+[![Version](https://img.shields.io/badge/version-0.1.0-38bdf8?style=for-the-badge)](https://github.com/kingroyale537/rishikesh/releases)
 [![Packages](https://img.shields.io/badge/Packages-10,000,000+-818cf8?style=for-the-badge)](https://rishikesh.lang)
-[![Platforms](https://img.shields.io/badge/Platforms-macOS%20|%20Linux%20|%20Windows-f59e0b?style=for-the-badge)](https://github.com/rishikeshrai/rishikesh)
+[![Platforms](https://img.shields.io/badge/Platforms-macOS%20|%20Linux%20|%20Windows-f59e0b?style=for-the-badge)](https://github.com/kingroyale537/rishikesh)
 [![License](https://img.shields.io/badge/license-MIT%20/%20Apache--2.0-ec4899?style=for-the-badge)](LICENSE)
 
 **The Universal, High-Performance Programming Language for AI, Systems, and Cloud.**  
 Designed to unify **Python's elegance**, **Rust's zero-cost bare-metal performance**, and **Erlang's actor concurrency**.
 
-[Website](https://rishikesh.lang) • [Interactive Playground](https://rishikesh.lang#playground) • [Documentation](docs/) • [Report Bug](https://github.com/rishikeshrai/rishikesh/issues)
+[Website](https://rishikesh.lang) • [Interactive Playground](https://rishikesh.lang#playground) • [Documentation](docs/) • [Report Bug](https://github.com/kingroyale537/rishikesh/issues)
 
 </div>
 
@@ -45,7 +45,7 @@ iwr -useb https://rishikesh.lang/install.ps1 | iex
 
 ### From Source (Requires Rust 1.75+)
 ```bash
-git clone https://github.com/rishikeshrai/rishikesh.git
+git clone https://github.com/kingroyale537/rishikesh.git
 cd rishikesh
 cargo install --path crates/rishi_cli
 ```

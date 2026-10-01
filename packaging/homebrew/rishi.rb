@@ -1,7 +1,7 @@
 class Rishi < Formula
   desc "The Universal Programming Language for AI, Systems, and Cloud"
   homepage "https://rishikesh.lang"
-  url "https://github.com/rishikeshrai/rishikesh/archive/refs/tags/v0.1.0.tar.gz"
+  url "https://github.com/kingroyale537/rishikesh/archive/refs/tags/v0.1.0.tar.gz"
   sha256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   license any_of: ["MIT", "Apache-2.0"]
 
